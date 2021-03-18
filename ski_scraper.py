@@ -1,20 +1,21 @@
 from bot import Bot
 import pandas as pd
 from time import sleep
-import requests
 import json
+from multi_webbing import multi_webbing as mw
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
 
 class ski_scrapper(Bot):
     
-    def __init__(self):
+    def __init__(self, n = None):
 
         super().__init__()
         self.df = pd.DataFrame()
+        self.n = n
 
-    def scrape_table(self, rows = None):
+    def scrape_table(self):
         
         self.driver.get('https://ski-resort-stats.com/find-ski-resort/')
         wait = WebDriverWait(self.driver, 10)
@@ -23,10 +24,10 @@ class ski_scrapper(Bot):
         self.scroll(y = 2000)
         self.driver.find_element_by_xpath('//*[@id="table_1_length"]/label/div/select/option[7]').click()
 
-        if rows == None:
+        if self.n == None:
             table_length = int(self.driver.find_element_by_xpath('//*[@id="table_1_info"]').text.split()[3])
         else:
-            table_length = rows
+            table_length = self.n
 
         for i in range(table_length):    
             item = f'//*[@id="table_21_row_{i}"]/td'
@@ -47,87 +48,108 @@ class ski_scrapper(Bot):
             if self.verbose:
               print('Got info for:' + lst[0].text)
 
-    def scrape_pages(self, n = None):
+    def scrape_pages(self, threads = 1):
 
-        extra_data_df = pd.DataFrame()
-        snow_df = pd.DataFrame()
+        extra_data_df = []
+        snow_df = []
         resorts = self.df[self.df['url'] != 'https://ski-resort-stats.com/beta-project'][['url' , 'resort_name']]
 
-        if n != None: resorts = resorts.iloc[:n,]
+        if self.n != None: resorts = resorts.iloc[:self.n,]
 
-        for url,resort in [tuple(x) for x in resorts.to_numpy()]:
-    
-        # Check page response
-            r = requests.get(url)
+        #Init threads
+        num_threads = threads
+        my_threads = mw.MultiWebbing(num_threads, web_module="selenium")
+        my_threads.start()
 
-            if r.status_code == 200:
-                self.driver.get(url)
-                sleep(1)
 
-                dta = self.driver.find_elements_by_xpath('//*/table/tbody/tr')
-                data = {}
-                renderData = {}
+        def get_ski_info(job):
+        
+            resort = job.custom_data[0]
+            extra_data_df = job.custom_data[1]
+            snow_df = job.custom_data[2]
+            job_id = job.custom_data[3]
 
-                l = []
-                for item in dta:
-                    k = item.find_elements_by_xpath('td/span')
-                    for i in k:
-                        l.append(i)
-                
-                # Check page isnt blank
+            job.get_url() # Called in Multi-Web
+            sleep(1)
 
-                if len(l) == 0:
-                    if self.verbose: print('No data for: ' + resort)
+            dta = job.driver.find_elements_by_xpath('//*/table/tbody/tr')
+            data = {}
+            renderData = {}
 
-                else:
-                    # Check if snow depth chart is present 
-                    try: 
-                        scpt = self.driver.execute_script('return JSON.stringify(wpDataCharts)')
-                    except:
-                        if self.verbose: print('No snow data for: ' + resort)
-                    else:
-                        x = json.loads(scpt)
+            l = []
+            for item in dta:
+                k = item.find_elements_by_xpath('td/span')
+                for i in k:
+                    l.append(i)
+            
+            # Check page isnt blank
 
-                        for k in x:
-                            renderData['options'] = x[k]['render_data']['options']
-                        
+            if len(l) == 0:
+                if self.verbose: print('No data for: ' + resort)
 
-                        for item in renderData['options']['series']:
-                            data[item['name']] = item['data']
-                    
-                        data['weeks'] = renderData['options']['xAxis']['categories']
-
-                    extra_data = {  'resort_name': resort,
-                            'Beginner_slopes(km)': l[3].text,
-                            'Intermediate_slopes(km)': l[4].text,
-                            'Difficult_slopes(km)': l[5].text,
-                            'T-Bar_Lifts': l[6].text,
-                            'Chairlifts': l[7].text,
-                            'Gondolas': l[8].text,
-                            'Snowpark': l[9].text == 'Yes',
-                            'Night_skiing': l[10].text == 'Yes',
-                            'Snow_cannons': l[11].text                            
-                                }
-
-                    snow_data = { 'resort_name': resort,
-                                    'Snow_data': data 
-                                }
-                               
-                    extra_data_df = extra_data_df.append(extra_data, ignore_index=True)
-                    self.df = pd.merge(self.df, extra_data_df, how = 'left', on = ['resort_name','resort_name'])
-                    self.df.to_csv('merged_data.csv')
-
-                    snow_df = snow_df.append(snow_data, ignore_index=True)
-                    snow_df.to_json('Snow_data')
-
-                    if self.verbose: print('Got info for: ' + resort)
             else:
-                if self.verbose: print('No info for: ' + resort)
+                # Check if snow depth chart is present 
+                try: 
+                    scpt = job.driver.execute_script('return JSON.stringify(wpDataCharts)')
+                except:
+                    if self.verbose: print('No snow data for: ' + resort)
+                else:
+                    x = json.loads(scpt)
+
+                    for k in x:
+                        renderData['options'] = x[k]['render_data']['options']
+                    
+
+                    for item in renderData['options']['series']:
+                        data[item['name']] = item['data']
+                
+                    data['weeks'] = renderData['options']['xAxis']['categories']
+
+                extra_data = {  'resort_name': resort,
+                        'Beginner_slopes(km)': l[3].text,
+                        'Intermediate_slopes(km)': l[4].text,
+                        'Difficult_slopes(km)': l[5].text,
+                        'T-Bar_Lifts': l[6].text,
+                        'Chairlifts': l[7].text,
+                        'Gondolas': l[8].text,
+                        'Snowpark': l[9].text == 'Yes',
+                        'Night_skiing': l[10].text == 'Yes',
+                        'Snow_cannons': l[11].text                            
+                            }
+
+                snow_data = { 'resort_name': resort,
+                                'Snow_data': data 
+                            }
+
+                job.lock.acquire()            
+                extra_data_df.append(extra_data) #, ignore_index=True)
+                #extra_data_df.to_csv('extra_data.csv')
+
+                snow_df.append(snow_data)# , ignore_index=True)
+                #snow_df.to_json('Snow_data')
+                print(resort_idx,len(extra_data_df))
+                # print(len(extra_data_df))
+                # print(len(snow_df))
+
+                job.lock.release()
+
+                if self.verbose: print('Got info for: ' + resort)
+
+        # Loop adds jobs to queue
+        for resort_idx,(url,resort) in enumerate([tuple(x) for x in resorts.to_numpy()]):
+            my_threads.job_queue.put(mw.Job(get_ski_info, url, (resort, extra_data_df, snow_df, resort_idx)))
+
+        while my_threads.job_queue.qsize() > 0:
+            sleep(1)
+            #if self.verbose: print(my_threads.job_queue.qsize())
+
+                
+        my_threads.finish()
 
 if __name__ == '__main__':
     
-    skibot = ski_scrapper()
+    skibot = ski_scrapper(3)
     skibot.verbose = True
-    skibot.scrape_table(10)
-    skibot.scrape_pages(10)
+    skibot.scrape_table()
+    skibot.scrape_pages(threads = 1)
     skibot.driver.quit()
