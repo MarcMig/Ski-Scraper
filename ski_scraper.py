@@ -143,13 +143,17 @@ class ski_scrapper(Bot):
             sleep(1)
             #if self.verbose: print(my_threads.job_queue.qsize())
 
-                
+        df_data = pd.DataFrame(extra_data_df)
+        df_snow = pd.DataFrame(snow_df)
+        df_data.to_csv('df_data.csv')
+        df_snow.to_csv('df_snow.csv')
+
         my_threads.finish()
 
 if __name__ == '__main__':
     
-    skibot = ski_scrapper(3)
+    skibot = ski_scrapper(10)
     skibot.verbose = True
     skibot.scrape_table()
-    skibot.scrape_pages(threads = 1)
+    skibot.scrape_pages(threads = 4)
     skibot.driver.quit()
