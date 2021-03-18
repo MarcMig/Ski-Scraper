@@ -129,9 +129,9 @@ dmypy.json
 .pyre/
 
 # Data files
-.csv
-.json
+*.csv
+*.json
 
 # Executables
-.exe
+*.exe
 
