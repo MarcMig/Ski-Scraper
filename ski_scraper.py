@@ -61,15 +61,22 @@ class ski_scrapper(Bot):
         my_threads = mw.MultiWebbing(num_threads, web_module="selenium")
         my_threads.start()
 
+        def add_to_data():
+            df_data = pd.DataFrame(extra_data_df)
+            df_data.to_csv('df_data.csv')
+        
+        def add_snow():
+            df_snow = pd.DataFrame(snow_df)
+            df_snow.to_csv('df_snow.csv')
+
 
         def get_ski_info(job):
         
             resort = job.custom_data[0]
             extra_data_df = job.custom_data[1]
             snow_df = job.custom_data[2]
-            job_id = job.custom_data[3]
 
-            job.get_url() # Called in Multi-Web
+            job.get_url()
             sleep(1)
 
             dta = job.driver.find_elements_by_xpath('//*/table/tbody/tr')
@@ -121,32 +128,27 @@ class ski_scrapper(Bot):
                                 'Snow_data': data 
                             }
 
-                job.lock.acquire()            
-                extra_data_df.append(extra_data) #, ignore_index=True)
-                #extra_data_df.to_csv('extra_data.csv')
+                # Append data to lists and Save
 
-                snow_df.append(snow_data)# , ignore_index=True)
-                #snow_df.to_json('Snow_data')
-                print(resort_idx,len(extra_data_df))
-                # print(len(extra_data_df))
-                # print(len(snow_df))
+                job.lock.acquire()
+
+                extra_data_df.append(extra_data) 
+                add_to_data()
+
+                snow_df.append(snow_data)
+                add_snow()
 
                 job.lock.release()
 
                 if self.verbose: print('Got info for: ' + resort)
 
         # Loop adds jobs to queue
-        for resort_idx,(url,resort) in enumerate([tuple(x) for x in resorts.to_numpy()]):
-            my_threads.job_queue.put(mw.Job(get_ski_info, url, (resort, extra_data_df, snow_df, resort_idx)))
+        for url,resort in [tuple(x) for x in resorts.to_numpy()]:
+            my_threads.job_queue.put(mw.Job(get_ski_info, url, (resort, extra_data_df, snow_df)))
 
         while my_threads.job_queue.qsize() > 0:
             sleep(1)
-            #if self.verbose: print(my_threads.job_queue.qsize())
-
-        df_data = pd.DataFrame(extra_data_df)
-        df_snow = pd.DataFrame(snow_df)
-        df_data.to_csv('df_data.csv')
-        df_snow.to_csv('df_snow.csv')
+            if self.verbose: print(my_threads.job_queue.qsize())
 
         my_threads.finish()
 
