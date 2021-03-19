@@ -44,7 +44,7 @@ class ski_scrapper(Bot):
             'season' : lst[7].text }
 
             self.df = self.df.append(ex, ignore_index=True)
-            self.df.to_csv('data12.csv')
+            self.df.to_csv('data.csv')
 
             if self.verbose:
               print('Got info for:' + lst[0].text)
@@ -66,11 +66,11 @@ class ski_scrapper(Bot):
 
         def add_to_data():
             df_data = pd.DataFrame(extra_data_df)
-            df_data.to_csv('df_data.csv')
+            df_data.to_csv('add_data.csv')
         
         def add_snow():
             df_snow = pd.DataFrame(snow_df)
-            df_snow.to_csv('df_snow.csv')
+            df_snow.to_csv('snow_data.csv')
 
 
         def get_ski_info(job):
@@ -157,7 +157,7 @@ class ski_scrapper(Bot):
 
 if __name__ == '__main__':
     
-    skibot = ski_scrapper(10)
+    skibot = ski_scrapper()
     skibot.verbose = True
     skibot.scrape_table()
-    skibot.scrape_pages(threads = 3)
+    skibot.scrape_pages(threads = 2)
