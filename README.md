@@ -7,6 +7,8 @@ Uses the Multi-Webbing module, install it with pip:
 
 `pip install multi_webbing`
 
+## Runtime!
+
 1. Instance bot with:  `skiscraper = ski_scraper(n)`
 
     n is optional to limit the number of rows scraped, if left blank it will scrape the entire table.
