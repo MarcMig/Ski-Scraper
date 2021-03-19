@@ -1,9 +1,11 @@
 # Ski_scraper
 A bot to scrape ski-resort-stats.com using Selenium webdriver and multi-threading.
 
+Bot template by [Harry Berg](https://github.com/life-efficient)
+
 ## Requirements
 
-Uses the Multi-Webbing module, install it with pip:
+Uses the Multi-Webbing module courtesy of [Adam Hardy](https://github.com/adhardy), install it with pip:
 
 `pip install multi_webbing`
 
