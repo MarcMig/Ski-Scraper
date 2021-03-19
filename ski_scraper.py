@@ -30,6 +30,7 @@ class ski_scrapper(Bot):
             table_length = self.n
 
         for i in range(table_length):    
+
             item = f'//*[@id="table_21_row_{i}"]/td'
             lst = self.driver.find_elements_by_xpath(item)
             ex = { 'resort_name' : lst[0].text,
@@ -47,6 +48,8 @@ class ski_scrapper(Bot):
 
             if self.verbose:
               print('Got info for:' + lst[0].text)
+
+        self.driver.quit()
 
     def scrape_pages(self, threads = 1):
 
@@ -157,5 +160,4 @@ if __name__ == '__main__':
     skibot = ski_scrapper(10)
     skibot.verbose = True
     skibot.scrape_table()
-    skibot.scrape_pages(threads = 4)
-    skibot.driver.quit()
+    skibot.scrape_pages(threads = 3)
