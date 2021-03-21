@@ -17,17 +17,25 @@ class ski_scrapper(Bot):
 
     def scrape_table(self):
         
+        # Initiate driver, get website and wait for table to load
+
         self.driver.get('https://ski-resort-stats.com/find-ski-resort/')
         wait = WebDriverWait(self.driver, 10)
         wait.until(presence_of_element_located((By.ID,'table_21_row_0')))
 
+        # Expand table to include all rows for easy scraping
+
         self.scroll(y = 2000)
         self.driver.find_element_by_xpath('//*[@id="table_1_length"]/label/div/select/option[7]').click()
+
+        # Restrict rows to scrape through n or find table length on website
 
         if self.n == None:
             table_length = int(self.driver.find_element_by_xpath('//*[@id="table_1_info"]').text.split()[3])
         else:
             table_length = self.n
+
+        # Scrape table, save data to csv file
 
         for i in range(table_length):    
 
@@ -44,7 +52,7 @@ class ski_scrapper(Bot):
             'season' : lst[7].text }
 
             self.df = self.df.append(ex, ignore_index=True)
-            self.df.to_csv('data1.csv')
+            self.df.to_csv('data.csv')
 
             if self.verbose:
               print('Got info for:' + lst[0].text)
