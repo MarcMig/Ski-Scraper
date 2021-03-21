@@ -44,7 +44,7 @@ class ski_scrapper(Bot):
             'season' : lst[7].text }
 
             self.df = self.df.append(ex, ignore_index=True)
-            self.df.to_csv('data.csv')
+            self.df.to_csv('data1.csv')
 
             if self.verbose:
               print('Got info for:' + lst[0].text)
@@ -54,7 +54,7 @@ class ski_scrapper(Bot):
     def scrape_pages(self, threads = 1):
 
         extra_data_df = []
-        snow_df = []
+        snow_df = {}
         resorts = self.df[self.df['url'] != 'https://ski-resort-stats.com/beta-project'][['url' , 'resort_name']]
 
         if self.n != None: resorts = resorts.iloc[:self.n,]
@@ -69,8 +69,8 @@ class ski_scrapper(Bot):
             df_data.to_csv('add_data.csv')
         
         def add_snow():
-            df_snow = pd.DataFrame(snow_df)
-            df_snow.to_csv('snow_data.csv')
+            df_snow = pd.DataFrame.from_dict(snow_df, orient= 'index')
+            df_snow.to_json('snow_data.json')
 
 
         def get_ski_info(job):
@@ -126,11 +126,7 @@ class ski_scrapper(Bot):
                         'Night_skiing': l[10].text == 'Yes',
                         'Snow_cannons': l[11].text                            
                             }
-
-                snow_data = { 'resort_name': resort,
-                                'Snow_data': data 
-                            }
-
+                
                 # Append data to lists and Save
 
                 job.lock.acquire()
@@ -138,8 +134,9 @@ class ski_scrapper(Bot):
                 extra_data_df.append(extra_data) 
                 add_to_data()
 
-                snow_df.append(snow_data)
-                add_snow()
+                if data != {}:
+                    snow_df[resort] = data
+                    add_snow()
 
                 job.lock.release()
 
@@ -154,6 +151,7 @@ class ski_scrapper(Bot):
             if self.verbose: print(my_threads.job_queue.qsize())
 
         my_threads.finish()
+
 
 if __name__ == '__main__':
     
