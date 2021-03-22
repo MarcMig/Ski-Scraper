@@ -8,6 +8,26 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
 
 class ski_scrapper(Bot):
+    '''
+    Create a scrapper Bot!
+
+    Args:
+        n (int): used to limit the number of rows scraped for testing
+
+    Attributes:
+        df (DataFrame): stores the scraped data
+        n (int): stores the scrape limiter
+
+    Methods:
+        scrape_table: scrapes the main table and stores data in df, 
+                      run first to gather the urls of the station pages
+
+        scrape_pages(threads): scrapes individual station pages using
+                      using the number of threads specified, since the
+                      website is a beta version using more than 2 might
+                      make it skip pages
+
+    '''
     
     def __init__(self, n = None):
 
@@ -57,20 +77,28 @@ class ski_scrapper(Bot):
             if self.verbose:
               print('Got info for:' + lst[0].text)
 
+        # Close driver
+
         self.driver.quit()
 
     def scrape_pages(self, threads = 1):
 
+        # Get list of resorts and Urls from DataFrame
         extra_data_df = []
         snow_df = {}
         resorts = self.df[self.df['url'] != 'https://ski-resort-stats.com/beta-project'][['url' , 'resort_name']]
 
         if self.n != None: resorts = resorts.iloc[:self.n,]
 
-        #Init threads
+        # Initiate threads
+
         num_threads = threads
         my_threads = mw.MultiWebbing(num_threads, web_module="selenium")
         my_threads.start()
+
+
+        #  Cannot append to Pandas in Job function so worker functions are defined
+        #  to create dataFrame and save data  
 
         def add_to_data():
             df_data = pd.DataFrame(extra_data_df)
@@ -80,12 +108,17 @@ class ski_scrapper(Bot):
             df_snow = pd.DataFrame.from_dict(snow_df, orient= 'index')
             df_snow.to_json('snow_data.json')
 
+        # Job function for multi-threading 
 
         def get_ski_info(job):
-        
+            
+            # Retrieve local vars
+
             resort = job.custom_data[0]
             extra_data_df = job.custom_data[1]
             snow_df = job.custom_data[2]
+
+            # Go to webpage, find elements
 
             job.get_url()
             sleep(1)
@@ -106,13 +139,14 @@ class ski_scrapper(Bot):
                 if self.verbose: print('No data for: ' + resort)
 
             else:
-                # Check if snow depth chart is present 
+                # Check if snow depth chart is present, scrape it! 
                 try: 
                     scpt = job.driver.execute_script('return JSON.stringify(wpDataCharts)')
                 except:
                     if self.verbose: print('No snow data for: ' + resort)
                 else:
                     x = json.loads(scpt)
+
 
                     for k in x:
                         renderData['options'] = x[k]['render_data']['options']
@@ -154,6 +188,7 @@ class ski_scrapper(Bot):
         for url,resort in [tuple(x) for x in resorts.to_numpy()]:
             my_threads.job_queue.put(mw.Job(get_ski_info, url, (resort, extra_data_df, snow_df)))
 
+        # While loop adds 
         while my_threads.job_queue.qsize() > 0:
             sleep(1)
             if self.verbose: print(my_threads.job_queue.qsize())
