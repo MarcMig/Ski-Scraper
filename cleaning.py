@@ -1,4 +1,4 @@
-#%%
+
 import pandas as pd
 import numpy as np
 import country_converter as coco
@@ -47,7 +47,7 @@ df_merged['Snow_cannons'].replace(to_replace='No',inplace = True)
 df_merged['Snow_cannons'].replace(to_replace='no report',inplace = True)
 df_merged['Snow_cannons'] = pd.to_numeric(df_merged['Snow_cannons'])
 
-# Divide season to start and end
+# Divide season to start and end - filter out problematic lines
 rows = df_merged.loc[(
     (df_merged['season'] == 
     'December - April June - August October - November')
@@ -69,10 +69,15 @@ df_drop = df_merged.drop(index=rows.index)
 splits = pd.DataFrame()
 splits[['Season_start','Season_end']] = df_drop['season'].str.split(' - ',expand= True)
 df_d_merged = df_merged.merge(splits,how= 'left', left_index=True, right_index=True)
+
+# Hardcode stations with glacier skiing
 df_d_merged.loc[(df_d_merged['season'] == 
-    'December - April June - August October - November')]['Season_start','Season_end'] = ['December','April']
-# %%
-df_d_merged.describe()
-# %%
+    'December - April June - August October - November'),['Season_start','Season_end']] = ['December','April']
+
+df_d_merged.loc[(df_d_merged['season'] == 
+    'October - November December - May June - October'),['Season_start','Season_end']] = ['December','May']
+
+df_d_merged.loc[(df_d_merged['season'] == 
+    'November - May June - August'),['Season_start','Season_end']] = ['November','May']
+
 df_d_merged.to_csv('Shiny_Data.csv')
-# %%
