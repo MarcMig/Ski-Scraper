@@ -1,11 +1,12 @@
 
+#%%
 import pandas as pd
 import numpy as np
 import country_converter as coco
+#%%
 
-
-df_main = pd.read_csv('data.csv').drop('Unnamed: 0', axis=1)
-df_add = pd.read_csv('add_data.csv').drop('Unnamed: 0', axis=1)
+df_main = pd.read_csv('dataNone.csv').drop('Unnamed: 0', axis=1)
+df_add = pd.read_csv('add_dataNone.csv').drop('Unnamed: 0', axis=1)
 
 df_merged = pd.merge(df_main, df_add, how = 'left', on = ['resort_name', 'resort_name'])
 
@@ -80,4 +81,18 @@ df_d_merged.loc[(df_d_merged['season'] ==
 df_d_merged.loc[(df_d_merged['season'] == 
     'November - May June - August'),['Season_start','Season_end']] = ['November','May']
 
-df_d_merged.to_csv('Shiny_Data.csv')
+df_d_merged.to_csv('shiny_data.csv')
+
+#%%
+
+snowdf = pd.read_json('snow_dataNone.json')
+# %%
+snowdf
+# %%
+dta = snowdf.iloc[0,0]
+# %%
+snow = [item[0] for item in dta]
+weeks = [item[1] for item in dta]
+# %%
+weeks
+# %%

@@ -7,7 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
 
-class ski_scrapper(Bot):
+class SkiScraper(Bot):
     '''
     Create a scrapper Bot!
 
@@ -29,7 +29,7 @@ class ski_scrapper(Bot):
 
     '''
     
-    def __init__(self, n = None):
+    def __init__(self, n = 'all'):
 
         super().__init__()
         self.df = pd.DataFrame()
@@ -50,7 +50,7 @@ class ski_scrapper(Bot):
 
         # Restrict rows to scrape through n or find table length on website
 
-        if self.n == None:
+        if self.n == 'all':
             table_length = int(self.driver.find_element_by_xpath('//*[@id="table_1_info"]').text.split()[3])
         else:
             table_length = self.n
@@ -60,22 +60,22 @@ class ski_scrapper(Bot):
         for i in range(table_length):    
 
             item = f'//*[@id="table_21_row_{i}"]/td'
-            lst = self.driver.find_elements_by_xpath(item)
-            ex = { 'resort_name' : lst[0].text,
-            'url' : lst[0].find_element_by_tag_name('a').get_attribute('href'),
-            'continent' : lst[1].text,
-            'country' : lst[2].text,
-            'max_altitude' : (float(lst[3].text)*1000 if float(lst[3].text) < 10 else float(lst[3].text)), 
-            'min_altitude' : (float(lst[4].text)*1000 if float(lst[4].text) < 10 else float(lst[4].text)),
-            'child_friendly' : lst[5].text,
-            'ski_pass_price' : lst[6].text,
-            'season' : lst[7].text }
+            row_items_list = self.driver.find_elements_by_xpath(item)
+            ex = { 'resort_name' : row_items_list[0].text,
+            'url' : row_items_list[0].find_element_by_tag_name('a').get_attribute('href'),
+            'continent' : row_items_list[1].text,
+            'country' : row_items_list[2].text,
+            'max_altitude' : (float(row_items_list[3].text)*1000 if float(row_items_list[3].text) < 10 else float(row_items_list[3].text)), 
+            'min_altitude' : (float(row_items_list[4].text)*1000 if float(row_items_list[4].text) < 10 else float(row_items_list[4].text)),
+            'child_friendly' : row_items_list[5].text,
+            'ski_pass_price' : row_items_list[6].text,
+            'season' : row_items_list[7].text }
 
             self.df = self.df.append(ex, ignore_index=True)
-            self.df.to_csv('data.csv')
+            self.df.to_csv(f'data_{self.n}.csv')
 
             if self.verbose:
-              print('Got info for:' + lst[0].text)
+              print('Got info for:' + row_items_list[0].text)
 
         # Close driver
 
@@ -88,7 +88,7 @@ class ski_scrapper(Bot):
         snow_df = {}
         resorts = self.df[self.df['url'] != 'https://ski-resort-stats.com/beta-project'][['url' , 'resort_name']]
 
-        if self.n != None: resorts = resorts.iloc[:self.n,]
+        if self.n != 'all': resorts = resorts.iloc[:self.n,]
 
         # Initiate threads
 
@@ -102,11 +102,11 @@ class ski_scrapper(Bot):
 
         def add_to_data():
             df_data = pd.DataFrame(extra_data_df)
-            df_data.to_csv('add_data.csv')
+            df_data.to_csv(f'add_data_{self.n}.csv')
         
         def add_snow():
             df_snow = pd.DataFrame.from_dict(snow_df, orient= 'index')
-            df_snow.to_json('snow_data.json')
+            df_snow.to_json(f'snow_data_{self.n}.json')
 
         # Job function for multi-threading 
 
@@ -127,15 +127,15 @@ class ski_scrapper(Bot):
             data = {}
             renderData = {}
 
-            l = []
+            items_list = []
             for item in dta:
-                k = item.find_elements_by_xpath('td/span')
-                for i in k:
-                    l.append(i)
+                row = item.find_elements_by_xpath('td/span')
+                for ele in row:
+                    items_list.append(ele)
             
             # Check page isnt blank
 
-            if len(l) == 0:
+            if len(items_list) == 0:
                 if self.verbose: print('No data for: ' + resort)
 
             else:
@@ -145,28 +145,27 @@ class ski_scrapper(Bot):
                 except:
                     if self.verbose: print('No snow data for: ' + resort)
                 else:
-                    x = json.loads(scpt)
+                    js_script = json.loads(scpt)
 
 
-                    for k in x:
-                        renderData['options'] = x[k]['render_data']['options']
+                    for row in js_script:
+                        renderData['options'] = js_script[row]['render_data']['options']
                     
+                    weeks = renderData['options']['xAxis']['categories']
 
                     for item in renderData['options']['series']:
-                        data[item['name']] = item['data']
-                
-                    data['weeks'] = renderData['options']['xAxis']['categories']
+                        data[item['name']] = list(zip(item['data'], weeks))
 
                 extra_data = {  'resort_name': resort,
-                        'Beginner_slopes(km)': l[3].text,
-                        'Intermediate_slopes(km)': l[4].text,
-                        'Difficult_slopes(km)': l[5].text,
-                        'T-Bar_Lifts': l[6].text,
-                        'Chairlifts': l[7].text,
-                        'Gondolas': l[8].text,
-                        'Snowpark': l[9].text == 'Yes',
-                        'Night_skiing': l[10].text == 'Yes',
-                        'Snow_cannons': l[11].text                            
+                        'Beginner_slopes(km)': items_list[3].text,
+                        'Intermediate_slopes(km)': items_list[4].text,
+                        'Difficult_slopes(km)': items_list[5].text,
+                        'T-Bar_Lifts': items_list[6].text,
+                        'Chairlifts': items_list[7].text,
+                        'Gondolas': items_list[8].text,
+                        'Snowpark': items_list[9].text == 'Yes',
+                        'Night_skiing': items_list[10].text == 'Yes',
+                        'Snow_cannons': items_list[11].text                            
                             }
                 
                 # Append data to lists and Save
