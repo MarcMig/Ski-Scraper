@@ -3,6 +3,8 @@ A bot to scrape ski-resort-stats.com and collect general info on Ski resorts wor
 
 Basic Bot template provided by [Harry Berg](https://github.com/life-efficient)
 
+### [Slides](https://docs.google.com/presentation/d/e/2PACX-1vQA7km-j80KlXnk8nVqt188-UtyE2JtfAldBx_OQleCZKSDMqtk7mzoe5-6wFAJ4xMzukylb2_Pb0Za/pub?start=true&loop=false&delayms=5000)
+
 ## Requirements
 
 Uses Selenium webdriver and the Multi-Webbing module courtesy of [Adam Hardy](https://github.com/adhardy), install it with pip:
