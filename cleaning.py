@@ -9,8 +9,8 @@ class Cleaner:
         self.merged = pd.DataFrame()
 
     def loadandmerge(self):
-        df_main = pd.read_csv('dataNone.csv').drop('Unnamed: 0', axis=1)
-        df_add = pd.read_csv('add_dataNone.csv').drop('Unnamed: 0', axis=1)
+        df_main = pd.read_csv('dataNone.csv', index_col=0)
+        df_add = pd.read_csv('add_dataNone.csv', index_col=0)
         self.merged = pd.merge(df_main, df_add, how = 'left', on = ['resort_name', 'resort_name'])
 
 
@@ -26,34 +26,34 @@ class Cleaner:
 
     def snowgrooming(self):
         # Convert slopes to float
-        self.merged['Beginner_slopes(km)'] = self.merged['Beginner_slopes(km)'].str.replace('km','')
-        self.merged['Beginner_slopes(km)'] = self.merged['Beginner_slopes(km)'].str.replace(',','.')
-        self.merged['Beginner_slopes(km)'].replace(to_replace='N/A ',inplace = True)
-        self.merged['Beginner_slopes(km)'] = pd.to_numeric(self.merged['Beginner_slopes(km)'])
+        self.merged['beginner_slopes'] = self.merged['beginner_slopes'].str.replace('km','')
+        self.merged['beginner_slopes'] = self.merged['beginner_slopes'].str.replace(',','.')
+        self.merged['beginner_slopes'].replace(to_replace='N/A ',inplace = True)
+        self.merged['beginner_slopes'] = pd.to_numeric(self.merged['beginner_slopes'])
 
-        self.merged['Intermediate_slopes(km)'] = self.merged['Intermediate_slopes(km)'].str.replace('km','')
-        self.merged['Intermediate_slopes(km)'] = self.merged['Intermediate_slopes(km)'].str.replace(',','.')
-        self.merged['Intermediate_slopes(km)'].replace(to_replace='N/A ',inplace = True)
-        self.merged['Intermediate_slopes(km)'].replace(r'^\s*$', np.nan, regex=True,inplace = True)
-        self.merged['Intermediate_slopes(km)'] = pd.to_numeric(self.merged['Intermediate_slopes(km)'])
+        self.merged['intermediate_slopes'] = self.merged['intermediate_slopes'].str.replace('km','')
+        self.merged['intermediate_slopes'] = self.merged['intermediate_slopes'].str.replace(',','.')
+        self.merged['intermediate_slopes'].replace(to_replace='N/A ',inplace = True)
+        self.merged['intermediate_slopes'].replace(r'^\s*$', np.nan, regex=True,inplace = True)
+        self.merged['intermediate_slopes'] = pd.to_numeric(self.merged['intermediate_slopes'])
 
-        self.merged['Difficult_slopes(km)'] = self.merged['Difficult_slopes(km)'].str.replace('km','')
-        self.merged['Difficult_slopes(km)'] = self.merged['Difficult_slopes(km)'].str.replace(',','.')
-        self.merged['Difficult_slopes(km)'] = self.merged['Difficult_slopes(km)'].str.replace('[','')
-        self.merged['Difficult_slopes(km)'].replace(to_replace='N/A ',inplace = True)
-        self.merged['Difficult_slopes(km)'] = pd.to_numeric(self.merged['Difficult_slopes(km)'])
+        self.merged['difficult_slopes'] = self.merged['difficult_slopes'].str.replace('km','')
+        self.merged['difficult_slopes'] = self.merged['difficult_slopes'].str.replace(',','.')
+        self.merged['difficult_slopes'] = self.merged['difficult_slopes'].str.replace('[','')
+        self.merged['difficult_slopes'].replace(to_replace='N/A ',inplace = True)
+        self.merged['difficult_slopes'] = pd.to_numeric(self.merged['difficult_slopes'])
 
         # Add total slopes collumn
-        self.merged['Total_slopes(km)'] = self.merged[['Beginner_slopes(km)','Intermediate_slopes(km)','Difficult_slopes(km)']].sum(axis=1)
+        self.merged['Total_slopes(km)'] = self.merged[['beginner_slopes','intermediate_slopes','difficult_slopes']].sum(axis=1)
 
     def liftsandcannons(self):
         # Convert T-lifts to float
         pd.to_numeric(self.merged['T-Bar_Lifts'],errors = 'coerce')
 
         # Convert Snow cannons to float
-        self.merged['Snow_cannons'].replace(to_replace='No',inplace = True)
-        self.merged['Snow_cannons'].replace(to_replace='no report',inplace = True)
-        self.merged['Snow_cannons'] = pd.to_numeric(self.merged['Snow_cannons'])
+        self.merged['snow_cannons'].replace(to_replace='No',inplace = True)
+        self.merged['snow_cannons'].replace(to_replace='no report',inplace = True)
+        self.merged['snow_cannons'] = pd.to_numeric(self.merged['snow_cannons'])
 
 
     def season_splitter(self):

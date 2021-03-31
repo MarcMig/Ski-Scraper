@@ -157,15 +157,15 @@ class SkiScraper(Bot):
                         data[item['name']] = list(zip(item['data'], weeks))
 
                 extra_data = {  'resort_name': resort,
-                        'Beginner_slopes(km)': items_list[3].text,
-                        'Intermediate_slopes(km)': items_list[4].text,
-                        'Difficult_slopes(km)': items_list[5].text,
-                        'T-Bar_Lifts': items_list[6].text,
-                        'Chairlifts': items_list[7].text,
-                        'Gondolas': items_list[8].text,
-                        'Snowpark': items_list[9].text == 'Yes',
-                        'Night_skiing': items_list[10].text == 'Yes',
-                        'Snow_cannons': items_list[11].text                            
+                        'beginner_slopes': items_list[3].text,
+                        'intermediate_slopes': items_list[4].text,
+                        'difficult_slopes': items_list[5].text,
+                        't-bar_lifts': items_list[6].text,
+                        'chairlifts': items_list[7].text,
+                        'gondolas': items_list[8].text,
+                        'snowpark': items_list[9].text == 'Yes',
+                        'night_skiing': items_list[10].text == 'Yes',
+                        'snow_cannons': items_list[11].text                            
                             }
                 
                 # Append data to lists and Save
