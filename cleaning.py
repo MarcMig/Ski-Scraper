@@ -77,7 +77,7 @@ class Cleaner:
 
         df_drop = self.merged.drop(index=rows.index)
         splits = pd.DataFrame()
-        splits[['Season_start','Season_end']] = df_drop['season'].str.split(' - ',expand= True)
+        splits[['season_start','season_end']] = df_drop['season'].str.split(' - ',expand= True)
         self.merged = self.merged.merge(splits,how= 'left', left_index=True, right_index=True)
 
         # Hardcode stations with glacier skiing
